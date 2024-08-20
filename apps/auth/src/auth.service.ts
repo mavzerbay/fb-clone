@@ -1,40 +1,38 @@
 import {
   ConflictException,
+  Inject,
   Injectable,
   UnauthorizedException,
 } from '@nestjs/common';
-import { InjectRepository } from '@nestjs/typeorm';
 import { JwtService } from '@nestjs/jwt';
-import { ConfigService } from '@nestjs/config';
 
 import * as bcrypt from 'bcrypt';
-import { Repository } from 'typeorm';
 
-import { UserEntity } from './user.entity';
 import { NewUserDTO } from './dtos/new_user.dto';
 import { ExistingUserDTO } from './dtos/existing_user.dto';
+import { UserRepositoryInterface, UserEntity } from '@app/shared';
+import { AuthServiceInterface } from './interface/auth_service.interface';
 
 @Injectable()
-export class AuthService {
+export class AuthService implements AuthServiceInterface {
   constructor(
-    @InjectRepository(UserEntity)
-    private readonly usersRepository: Repository<UserEntity>,
+    @Inject('UsersRepositoryInterface')
+    private readonly usersRepository: UserRepositoryInterface,
     private readonly jwtService: JwtService,
-    private readonly configService: ConfigService,
   ) {}
 
   async getUsers(): Promise<UserEntity[]> {
-    return await this.usersRepository.find();
+    return await this.usersRepository.findAll();
   }
 
   async findByEmail(email: string): Promise<UserEntity> {
-    return await this.usersRepository.findOne({
+    return await this.usersRepository.findByCondition({
       where: { email },
       select: ['id', 'firstName', 'lastName', 'email', 'password'],
     });
   }
 
-  private async hashPassword(password: string): Promise<string> {
+  async hashPassword(password: string): Promise<string> {
     return await bcrypt.hash(password, 12);
   }
 
@@ -61,14 +59,14 @@ export class AuthService {
     return savedUser;
   }
 
-  private doesPasswordMatch(password: string, hashedPassword: string): boolean {
-    return bcrypt.compareSync(password, hashedPassword);
+  async doesPasswordMatch(
+    password: string,
+    hashedPassword: string,
+  ): Promise<boolean> {
+    return await bcrypt.compare(password, hashedPassword);
   }
 
-  private async validateUser(
-    email: string,
-    password: string,
-  ): Promise<UserEntity> {
+  async validateUser(email: string, password: string): Promise<UserEntity> {
     const user = await this.findByEmail(email);
 
     if (!user) return null;
@@ -89,22 +87,20 @@ export class AuthService {
       throw new UnauthorizedException('Invalid email or password');
     }
 
-    const jwt = await this.jwtService.signAsync(
-      { user },
-      { secret: this.configService.get('JWT_SECRET') },
-    );
+    delete user.password;
 
-    return { token: jwt };
+    const jwt = await this.jwtService.signAsync({ user });
+
+    return { token: jwt, user };
   }
 
-  async verifyJwt(jwt: string) {
+  async verifyJwt(jwt: string): Promise<{ user: UserEntity; exp: number }> {
     if (!jwt) {
       throw new UnauthorizedException('Invalid token');
     }
     try {
-      const { exp } = await this.jwtService.verifyAsync(jwt);
-
-      return { exp };
+      const { user, exp } = await this.jwtService.verifyAsync(jwt);
+      return { user, exp };
     } catch (error) {
       throw new UnauthorizedException('Invalid token');
     }
