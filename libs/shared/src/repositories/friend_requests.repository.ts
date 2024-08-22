@@ -5,7 +5,7 @@ import {
   BaseAbstractRepository,
   FriendRequestEntity,
   FriendRequestsRepositoryInterface,
-} from '..';
+} from '@app/shared'
 
 @Injectable()
 export class FriendRequestsRepository
