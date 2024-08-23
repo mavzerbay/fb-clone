@@ -35,6 +35,10 @@ export class AuthService implements AuthServiceInterface {
     return await this.usersRepository.findAll();
   }
 
+  async getUserById(id: number): Promise<UserEntity> {
+    return await this.usersRepository.findOneById(id);
+  }
+
   async findByEmail(email: string): Promise<UserEntity> {
     return await this.usersRepository.findByCondition({
       where: { email },

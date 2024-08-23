@@ -26,6 +26,16 @@ export class AuthController {
     return this.authService.getUsers();
   }
 
+  @MessagePattern({ cmd: 'get-user' })
+  async getUser(
+    @Ctx() context: RmqContext,
+    @Payload() payload: { id: number },
+  ) {
+    this.sharedService.acknowledgeMessage(context);
+
+    return this.authService.getUserById(payload.id);
+  }
+
   @MessagePattern({ cmd: 'register' })
   async register(@Ctx() context: RmqContext, @Payload() newUser: NewUserDTO) {
     this.sharedService.acknowledgeMessage(context);
