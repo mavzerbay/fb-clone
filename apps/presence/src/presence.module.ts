@@ -4,6 +4,8 @@ import { SharedModule, RedisModule } from '@app/shared';
 
 import { PresenceController } from './presence.controller';
 import { PresenceService } from './presence.service';
+import { CacheModule } from '@nestjs/cache-manager';
+import { PresenceGateway } from './presence.gateway';
 
 @Module({
   imports: [
@@ -11,6 +13,6 @@ import { PresenceService } from './presence.service';
     SharedModule.registerRmq('AUTH_SERVICE', process.env.RABBITMQ_AUTH_QUEUE),
   ],
   controllers: [PresenceController],
-  providers: [PresenceService],
+  providers: [PresenceService, PresenceGateway],
 })
 export class PresenceModule {}

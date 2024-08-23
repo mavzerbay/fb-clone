@@ -124,4 +124,22 @@ export class AppController {
       },
     );
   }
+
+  @UseGuards(AuthGuard)
+  @UseInterceptors(UserInterceptor)
+  @Get('friend-list')
+  async getFriendList(@Req() req: UserRequest) {
+    if (!req?.user) {
+      throw new BadRequestException();
+    }
+
+    return this.authService.send(
+      {
+        cmd: 'get-friend-list',
+      },
+      {
+        userId: req.user.id,
+      },
+    );
+  }
 }

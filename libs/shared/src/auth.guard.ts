@@ -40,6 +40,7 @@ export class AuthGuard implements CanActivate {
       )
       .pipe(
         switchMap(({ exp }) => {
+          console.log('exp', exp);
           if (!exp) return of(false);
 
           const TOKEN_EXP_MS = exp * 1000;
