@@ -13,7 +13,6 @@ import {
 import { ClientProxy } from '@nestjs/microservices';
 import { AuthGuard } from '@app/shared';
 import { UserRequest } from '@app/shared/interfaces/user_request.interface';
-import { use } from 'passport';
 import { UserInterceptor } from '@app/shared/interceptors/user.interceptor';
 
 @Controller()
@@ -21,6 +20,7 @@ export class AppController {
   constructor(
     @Inject('AUTH_SERVICE') private readonly authService: ClientProxy,
     @Inject('PRESENCE_SERVICE') private readonly presenceService: ClientProxy,
+    @Inject('CHAT_SERVICE') private readonly chatService: ClientProxy,
   ) {}
 
   @Get()
@@ -98,7 +98,7 @@ export class AppController {
         cmd: 'get-user',
       },
       {
-        userId: req.user.id,
+        id: req.user.id,
       },
     );
   }
@@ -157,6 +157,27 @@ export class AppController {
       },
       {
         userId: req.user.id,
+      },
+    );
+  }
+
+  @Get('messages/:conversationId')
+  @UseInterceptors(UserInterceptor)
+  @UseGuards(AuthGuard)
+  async getMessages(
+    @Req() req: UserRequest,
+    @Param('conversationId') conversationId: number,
+  ) {
+    if (!req?.user) {
+      throw new BadRequestException();
+    }
+
+    return this.chatService.send(
+      {
+        cmd: 'messages',
+      },
+      {
+        id: conversationId,
       },
     );
   }

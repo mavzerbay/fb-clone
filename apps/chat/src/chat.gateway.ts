@@ -23,9 +23,11 @@ export class ChatGateway {
   @WebSocketServer()
   server: Server;
 
-  async handleConnection(socket: Socket) {}
-
   async handleDisconnect(socket: Socket) {
+    console.debug('Client disconnected');
+  }
+
+  async handleConnection(socket: Socket) {
     console.debug('Client connected');
 
     const jwt = socket.handshake.headers.authorization ?? null;
@@ -44,10 +46,6 @@ export class ChatGateway {
       return;
     }
 
-    console.debug(
-      `User ${res.user.firstName} ${res.user.lastName} authenticated`,
-    );
-
     const { user } = res;
 
     socket.data.user = user;
@@ -57,8 +55,6 @@ export class ChatGateway {
     await this.createConversation(socket, user.id);
 
     await this.getConversations(socket);
-
-    await this.getMessages(socket, user.id);
   }
 
   private async createConversation(socket: Socket, userId: number) {
@@ -80,14 +76,7 @@ export class ChatGateway {
 
     const conversationUser = { id: user.id, socketId: socket.id };
 
-    await this.cache.set(`conversationUser ${user.id}`, conversationUser);
-  }
-
-  private async getMessages(socket: Socket, userId: number) {
-    const messages = await this.chatService.getMessages(userId);
-
-    console.debug('Messages:', messages);
-    this.server.to(socket.id).emit('getAllMessages', messages);
+    await this.cache.set(`conversationUser ${user.id}`, conversationUser, 0);
   }
 
   @SubscribeMessage('get-conversations')
@@ -127,19 +116,26 @@ export class ChatGateway {
 
     if (!activeFriend || !activeFriend.isActive) return;
 
-    const friendsDetails = (await this.cache.get(
-      `conversationUser ${newMessage.friendId}`,
-    )) as { id: number; socketId: string } | undefined;
+    const friendsDetails = await this.cache.get(
+      `conversationUser ${activeFriend.id}`,
+    );
 
     if (!friendsDetails) return;
 
-    const { id, content, user: creator, conversation } = createdMessage;
+    const {
+      id,
+      content,
+      user: creator,
+      conversation,
+      createdAt,
+    } = createdMessage;
 
     this.server.to(friendsDetails.socketId).emit('newMessage', {
       id,
       content,
       creatorId: creator.id,
       conversationId: conversation.id,
+      createdAt,
     });
   }
 }

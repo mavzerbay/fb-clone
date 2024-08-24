@@ -82,19 +82,18 @@ export class ChatService {
     });
   }
 
-  async getMessages(userId: number) {
+  async getMessages(conversationId: number) {
     const allMessages = await this.messagesRepository.findWithRelations({
+      where: { conversation: { id: conversationId } },
       relations: ['user', 'conversation'],
+      order: { createdAt: 'ASC' },
     });
 
-    const userMessages = allMessages.filter(
-      (message) => message.user.id === userId,
-    );
-
-    return userMessages.map((message) => ({
+    return allMessages.map((message) => ({
       id: message.id,
       content: message.content,
-      user: message.user.id,
+      createdAt: message.createdAt,
+      creatorId: message.user.id,
       conversationId: message.conversation.id,
     }));
   }
