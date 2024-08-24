@@ -85,6 +85,24 @@ export class AppController {
     );
   }
 
+  @UseGuards(AuthGuard)
+  @UseInterceptors(UserInterceptor)
+  @Get('current-user')
+  async getCurrentUser(@Req() req: UserRequest) {
+    if (!req?.user) {
+      throw new BadRequestException();
+    }
+
+    return this.authService.send(
+      {
+        cmd: 'get-user',
+      },
+      {
+        userId: req.user.id,
+      },
+    );
+  }
+
   @Post('add-friend/:friendId')
   @UseInterceptors(UserInterceptor)
   @UseGuards(AuthGuard)

@@ -57,6 +57,8 @@ export class ChatGateway {
     await this.createConversation(socket, user.id);
 
     await this.getConversations(socket);
+
+    await this.getMessages(socket, user.id);
   }
 
   private async createConversation(socket: Socket, userId: number) {
@@ -79,6 +81,13 @@ export class ChatGateway {
     const conversationUser = { id: user.id, socketId: socket.id };
 
     await this.cache.set(`conversationUser ${user.id}`, conversationUser);
+  }
+
+  private async getMessages(socket: Socket, userId: number) {
+    const messages = await this.chatService.getMessages(userId);
+
+    console.debug('Messages:', messages);
+    this.server.to(socket.id).emit('getAllMessages', messages);
   }
 
   @SubscribeMessage('get-conversations')

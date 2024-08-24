@@ -25,7 +25,7 @@ export class AuthController {
 
     return this.authService.getUsers();
   }
-
+  
   @MessagePattern({ cmd: 'get-user' })
   async getUser(
     @Ctx() context: RmqContext,

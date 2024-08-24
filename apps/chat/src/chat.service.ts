@@ -63,10 +63,7 @@ export class ChatService {
     return conversation;
   }
 
-  async createMessage(
-    userId: number,
-    newMessageDto: NewMessageDto,
-  ) {
+  async createMessage(userId: number, newMessageDto: NewMessageDto) {
     const user = await this.getUser(userId);
 
     if (!user) return;
@@ -83,5 +80,22 @@ export class ChatService {
       user,
       conversation,
     });
+  }
+
+  async getMessages(userId: number) {
+    const allMessages = await this.messagesRepository.findWithRelations({
+      relations: ['user', 'conversation'],
+    });
+
+    const userMessages = allMessages.filter(
+      (message) => message.user.id === userId,
+    );
+
+    return userMessages.map((message) => ({
+      id: message.id,
+      content: message.content,
+      user: message.user.id,
+      conversationId: message.conversation.id,
+    }));
   }
 }
