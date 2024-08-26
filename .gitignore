@@ -4,6 +4,7 @@
 /db/data
 /build
 .db
+.redis
 
 # Logs
 logs
